@@ -1,0 +1,59 @@
+[Project]
+Current Flow=Generic
+VCS=0
+version=4
+Current Config=compile
+[Configurations]
+compile=Arquis_ProyectoFinal
+[Library]
+Arquis_ProyectoFinal=.\Arquis_ProyectoFinal\Arquis_ProyectoFinal.lib
+[$LibMap$]
+Arquis_ProyectoFinal=.
+[Settings]
+FLOW_TYPE=HDL
+LANGUAGE=VHDL
+REFRESH_FLOW=1
+[Files]
+/alu_riscv.v=-1
+/adder_nbits.v=-1
+/mux_4a1.v=-1
+/pipo_register.v=-1
+/rom_file.v=-1
+/ram.v=-1
+/banco_registros.v=-1
+/generador_inmediatos.v=-1
+/unidad_control.v=-1
+/procesador_riscv.v=-1
+/perifericos_io.v=-1
+/divisor_tick.v=-1
+/divisor_reloj.v=-1
+/bin_a_bcd.v=-1
+/decodificador_7seg.v=-1
+/semaforo_soc.v=-1
+/semaforo_de10lite.v=-1
+/tb_banco_registros.v=-1
+/tb_perifericos_io.v=-1
+/tb_procesador_riscv.v=-1
+/tb_semaforo_de10lite.v=-1
+[Files.Data]
+.\src\alu_riscv.v=Verilog Source Code
+.\src\adder_nbits.v=Verilog Source Code
+.\src\mux_4a1.v=Verilog Source Code
+.\src\pipo_register.v=Verilog Source Code
+.\src\rom_file.v=Verilog Source Code
+.\src\ram.v=Verilog Source Code
+.\src\banco_registros.v=Verilog Source Code
+.\src\generador_inmediatos.v=Verilog Source Code
+.\src\unidad_control.v=Verilog Source Code
+.\src\procesador_riscv.v=Verilog Source Code
+.\src\perifericos_io.v=Verilog Source Code
+.\src\divisor_tick.v=Verilog Source Code
+.\src\divisor_reloj.v=Verilog Source Code
+.\src\bin_a_bcd.v=Verilog Source Code
+.\src\decodificador_7seg.v=Verilog Source Code
+.\src\semaforo_soc.v=Verilog Source Code
+.\src\semaforo_de10lite.v=Verilog Source Code
+.\src\tb_banco_registros.v=Verilog Source Code
+.\src\tb_perifericos_io.v=Verilog Source Code
+.\src\tb_procesador_riscv.v=Verilog Source Code
+.\src\tb_semaforo_de10lite.v=Verilog Source Code

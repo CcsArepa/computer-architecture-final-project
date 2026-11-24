@@ -1,0 +1,72 @@
+To,Direction,Location,I/O Standard,Funcion
+MAX10_CLK1_50,Input,PIN_P11,3.3-V LVTTL,Reloj 50 MHz
+KEY[0],Input,PIN_B8,3.3-V LVTTL,Reset (activo en bajo)
+KEY[1],Input,PIN_A7,3.3-V LVTTL,Boton peatonal
+SW[0],Input,PIN_C10,3.3-V LVTTL,Sensor de autos
+SW[1],Input,PIN_C11,3.3-V LVTTL,Emergencia
+SW[2],Input,PIN_D12,3.3-V LVTTL,Sin uso
+SW[3],Input,PIN_C12,3.3-V LVTTL,Sin uso
+SW[4],Input,PIN_A12,3.3-V LVTTL,Sin uso
+SW[5],Input,PIN_B12,3.3-V LVTTL,Sin uso
+SW[6],Input,PIN_A13,3.3-V LVTTL,Sin uso
+SW[7],Input,PIN_A14,3.3-V LVTTL,Sin uso
+SW[8],Input,PIN_B14,3.3-V LVTTL,Sin uso
+SW[9],Input,PIN_F15,3.3-V LVTTL,Sin uso
+LEDR[0],Output,PIN_A8,3.3-V LVTTL,Latido 1 s
+LEDR[1],Output,PIN_A9,3.3-V LVTTL,Solicitud peatonal
+LEDR[2],Output,PIN_A10,3.3-V LVTTL,Peaton verde
+LEDR[3],Output,PIN_B10,3.3-V LVTTL,Peaton rojo
+LEDR[4],Output,PIN_D13,3.3-V LVTTL,Calle verde
+LEDR[5],Output,PIN_C13,3.3-V LVTTL,Calle amarillo
+LEDR[6],Output,PIN_E14,3.3-V LVTTL,Calle rojo
+LEDR[7],Output,PIN_D14,3.3-V LVTTL,Avenida verde
+LEDR[8],Output,PIN_A11,3.3-V LVTTL,Avenida amarillo
+LEDR[9],Output,PIN_B11,3.3-V LVTTL,Avenida rojo
+HEX0[0],Output,PIN_C14,3.3-V LVTTL,Segmento a (unidades)
+HEX0[1],Output,PIN_E15,3.3-V LVTTL,Segmento b (unidades)
+HEX0[2],Output,PIN_C15,3.3-V LVTTL,Segmento c (unidades)
+HEX0[3],Output,PIN_C16,3.3-V LVTTL,Segmento d (unidades)
+HEX0[4],Output,PIN_E16,3.3-V LVTTL,Segmento e (unidades)
+HEX0[5],Output,PIN_D17,3.3-V LVTTL,Segmento f (unidades)
+HEX0[6],Output,PIN_C17,3.3-V LVTTL,Segmento g (unidades)
+HEX0[7],Output,PIN_D15,3.3-V LVTTL,Segmento punto (unidades)
+HEX1[0],Output,PIN_C18,3.3-V LVTTL,Segmento a (decenas)
+HEX1[1],Output,PIN_D18,3.3-V LVTTL,Segmento b (decenas)
+HEX1[2],Output,PIN_E18,3.3-V LVTTL,Segmento c (decenas)
+HEX1[3],Output,PIN_B16,3.3-V LVTTL,Segmento d (decenas)
+HEX1[4],Output,PIN_A17,3.3-V LVTTL,Segmento e (decenas)
+HEX1[5],Output,PIN_A18,3.3-V LVTTL,Segmento f (decenas)
+HEX1[6],Output,PIN_B17,3.3-V LVTTL,Segmento g (decenas)
+HEX1[7],Output,PIN_A16,3.3-V LVTTL,Segmento punto (decenas)
+HEX2[0],Output,PIN_B20,3.3-V LVTTL,Segmento a (apagado)
+HEX2[1],Output,PIN_A20,3.3-V LVTTL,Segmento b (apagado)
+HEX2[2],Output,PIN_B19,3.3-V LVTTL,Segmento c (apagado)
+HEX2[3],Output,PIN_A21,3.3-V LVTTL,Segmento d (apagado)
+HEX2[4],Output,PIN_B21,3.3-V LVTTL,Segmento e (apagado)
+HEX2[5],Output,PIN_C22,3.3-V LVTTL,Segmento f (apagado)
+HEX2[6],Output,PIN_B22,3.3-V LVTTL,Segmento g (apagado)
+HEX2[7],Output,PIN_A19,3.3-V LVTTL,Segmento punto (apagado)
+HEX3[0],Output,PIN_F21,3.3-V LVTTL,Segmento a (fase)
+HEX3[1],Output,PIN_E22,3.3-V LVTTL,Segmento b (fase)
+HEX3[2],Output,PIN_E21,3.3-V LVTTL,Segmento c (fase)
+HEX3[3],Output,PIN_C19,3.3-V LVTTL,Segmento d (fase)
+HEX3[4],Output,PIN_C20,3.3-V LVTTL,Segmento e (fase)
+HEX3[5],Output,PIN_D19,3.3-V LVTTL,Segmento f (fase)
+HEX3[6],Output,PIN_E17,3.3-V LVTTL,Segmento g (fase)
+HEX3[7],Output,PIN_D22,3.3-V LVTTL,Segmento punto (fase)
+HEX4[0],Output,PIN_F18,3.3-V LVTTL,Segmento a (apagado)
+HEX4[1],Output,PIN_E20,3.3-V LVTTL,Segmento b (apagado)
+HEX4[2],Output,PIN_E19,3.3-V LVTTL,Segmento c (apagado)
+HEX4[3],Output,PIN_J18,3.3-V LVTTL,Segmento d (apagado)
+HEX4[4],Output,PIN_H19,3.3-V LVTTL,Segmento e (apagado)
+HEX4[5],Output,PIN_F19,3.3-V LVTTL,Segmento f (apagado)
+HEX4[6],Output,PIN_F20,3.3-V LVTTL,Segmento g (apagado)
+HEX4[7],Output,PIN_F17,3.3-V LVTTL,Segmento punto (apagado)
+HEX5[0],Output,PIN_J20,3.3-V LVTTL,Segmento a (apagado)
+HEX5[1],Output,PIN_K20,3.3-V LVTTL,Segmento b (apagado)
+HEX5[2],Output,PIN_L18,3.3-V LVTTL,Segmento c (apagado)
+HEX5[3],Output,PIN_N18,3.3-V LVTTL,Segmento d (apagado)
+HEX5[4],Output,PIN_M20,3.3-V LVTTL,Segmento e (apagado)
+HEX5[5],Output,PIN_N19,3.3-V LVTTL,Segmento f (apagado)
+HEX5[6],Output,PIN_N20,3.3-V LVTTL,Segmento g (apagado)
+HEX5[7],Output,PIN_L19,3.3-V LVTTL,Segmento punto (apagado)

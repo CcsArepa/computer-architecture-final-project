@@ -1,0 +1,56 @@
+% Apendices con el codigo completo (se incluye desde main.tex o anexo_codigo.tex)
+% =====================================================================
+\newpage
+\section{Código fuente de los módulos}\label{ap:codigo}
+% =====================================================================
+\subsection{Módulos de clase reutilizados}
+\lstinputlisting[language=Verilog,caption={alu\_riscv.v (clase, sin cambios)}]{codigo/alu_riscv.v}
+\lstinputlisting[language=Verilog,caption={adder\_nbits.v (clase)}]{codigo/adder_nbits.v}
+\lstinputlisting[language=Verilog,caption={mux\_4a1.v (clase)}]{codigo/mux_4a1.v}
+\lstinputlisting[language=Verilog,caption={pipo\_register.v (clase)}]{codigo/pipo_register.v}
+
+\subsection{Módulos adaptados}
+\lstinputlisting[language=Verilog,caption={rom\_file.v}]{codigo/rom_file.v}
+\lstinputlisting[language=Verilog,caption={ram.v}]{codigo/ram.v}
+\lstinputlisting[language=Verilog,caption={unidad\_control.v}]{codigo/unidad_control.v}
+
+\subsection{Módulos nuevos del procesador}
+\lstinputlisting[language=Verilog,caption={banco\_registros.v}]{codigo/banco_registros.v}
+\lstinputlisting[language=Verilog,caption={generador\_inmediatos.v}]{codigo/generador_inmediatos.v}
+\lstinputlisting[language=Verilog,caption={procesador\_riscv.v}]{codigo/procesador_riscv.v}
+
+\subsection{Periféricos y nivel superior}
+\lstinputlisting[language=Verilog,caption={perifericos\_io.v}]{codigo/perifericos_io.v}
+\lstinputlisting[language=Verilog,caption={divisor\_tick.v}]{codigo/divisor_tick.v}
+\lstinputlisting[language=Verilog,caption={divisor\_reloj.v}]{codigo/divisor_reloj.v}
+\lstinputlisting[language=Verilog,caption={bin\_a\_bcd.v}]{codigo/bin_a_bcd.v}
+\lstinputlisting[language=Verilog,caption={decodificador\_7seg.v}]{codigo/decodificador_7seg.v}
+\lstinputlisting[language=Verilog,caption={semaforo\_soc.v}]{codigo/semaforo_soc.v}
+\lstinputlisting[language=Verilog,caption={semaforo\_de10lite.v}]{codigo/semaforo_de10lite.v}
+
+\newpage
+\section{Bancos de prueba}\label{ap:tbs}
+\lstinputlisting[language=Verilog,caption={tb\_banco\_registros.v}]{codigo/tb_banco_registros.v}
+\lstinputlisting[language=Verilog,caption={tb\_perifericos\_io.v}]{codigo/tb_perifericos_io.v}
+\lstinputlisting[language=Verilog,caption={tb\_procesador\_riscv.v}]{codigo/tb_procesador_riscv.v}
+\lstinputlisting[language=Verilog,caption={tb\_semaforo\_de10lite.v}]{codigo/tb_semaforo_de10lite.v}
+
+\newpage
+\section{Programas en ensamblador}\label{ap:programas}
+\lstinputlisting[language=RISCV,caption={programa\_semaforo.asm}]{codigo/programa_semaforo.asm}
+\lstinputlisting[language=RISCV,caption={programa\_semaforo.lst (código máquina)}]{codigo/programa_semaforo.lst}
+\lstinputlisting[language=RISCV,caption={prueba\_instrucciones.asm}]{codigo/prueba_instrucciones.asm}
+\lstinputlisting[language=RISCV,caption={prueba\_instrucciones.lst (código máquina)}]{codigo/prueba_instrucciones.lst}
+
+\newpage
+\section{Archivos de Quartus Prime}\label{ap:quartus}
+\lstinputlisting[caption={semaforo\_de10lite.sdc}]{codigo/semaforo_de10lite.sdc}
+\lstinputlisting[caption={semaforo\_de10lite.qsf}]{codigo/semaforo_de10lite.qsf}
+
+\newpage
+\section{Resultados de los bancos de prueba}\label{ap:logs}
+\lstinputlisting[caption={resultados\_tb\_banco\_registros.txt}]{codigo/resultados_tb_banco_registros.txt}
+\lstinputlisting[caption={resultados\_tb\_perifericos\_io.txt}]{codigo/resultados_tb_perifericos_io.txt}
+\lstinputlisting[caption={resultados\_tb\_procesador\_riscv.txt}]{codigo/resultados_tb_procesador_riscv.txt}
+\lstinputlisting[caption={resultados\_tb\_semaforo\_de10lite.txt}]{codigo/resultados_tb_semaforo_de10lite.txt}
+

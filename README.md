@@ -1,0 +1,235 @@
+# Semáforo inteligente con procesador RISC-V en FPGA (DE10-Lite)
+
+Proyecto final de **Arquitecturas Computacionales**. Universidad de las Américas Puebla,
+Departamento de Computación, Electrónica y Mecatrónica.
+
+Es un **procesador RISC-V de 32 bits multiciclo** escrito en Verilog. El procesador ejecuta, desde
+su ROM, un programa en ensamblador que controla un **semáforo inteligente** en la tarjeta
+**Terasic DE10-Lite** (Intel MAX 10). El procesador se armó con los módulos desarrollados en
+clase (ALU, sumador, multiplexor, registro, ROM, RAM y unidad de control).
+
+![Diagrama del sistema](Reporte/figuras/diagrama_sistema.png)
+
+---
+
+## Contenido
+
+- [Funciones del semáforo](#funciones-del-semáforo)
+- [Uso en la DE10-Lite](#uso-en-la-de10-lite)
+- [Arquitectura del procesador](#arquitectura-del-procesador)
+- [Mapa de memoria](#mapa-de-memoria)
+- [Estructura del repositorio](#estructura-del-repositorio)
+- [Simulación en Active-HDL](#simulación-en-active-hdl)
+- [Implementación en Quartus](#implementación-en-quartus)
+- [Resultados](#resultados)
+- [Autores](#autores)
+
+---
+
+## Funciones del semáforo
+
+El cruce tiene una **avenida principal**, una **calle secundaria** y un **paso peatonal**.
+
+| Función | Comportamiento |
+|---|---|
+| Verde mínimo | La avenida está en verde al menos 10 s |
+| Sensor de autos | Si no hay autos en la calle, la avenida sigue en verde. Si hay, la calle recibe 8 s de verde |
+| Botón peatonal | Guarda la solicitud, recorta el verde de la avenida a 3 s y da 7 s a los peatones |
+| Emergencia | Desde cualquier fase pone **todos los semáforos en rojo** mientras esté activa |
+| Cuenta regresiva | Los displays muestran los segundos restantes y el número de fase |
+| Estadísticas | El programa cuenta en RAM los peatones atendidos, las emergencias y los ciclos de la calle |
+
+![Fases del semáforo](Reporte/figuras/diagrama_fases_semaforo.png)
+
+| Fase | Avenida | Calle | Peatones | Duración |
+|:-:|:-:|:-:|:-:|:-:|
+| 1 | 🟢 | 🔴 | 🔴 | ≥ 10 s (espera auto o peatón) |
+| 2 | 🟡 | 🔴 | 🔴 | 3 s |
+| 3 | 🔴 | 🟢 | 🔴 | 8 s |
+| 4 | 🔴 | 🟡 | 🔴 | 3 s |
+| 5 | 🔴 | 🔴 | 🟢 | 7 s |
+| E | 🔴 | 🔴 | 🔴 | mientras `SW[1]` = 1 |
+
+---
+
+## Uso en la DE10-Lite
+
+| Control | Función |
+|---|---|
+| `KEY[0]` | Reset |
+| `KEY[1]` | Botón peatonal |
+| `SW[0]` | Sensor de autos en la calle |
+| `SW[1]` | Modo emergencia |
+
+| Salida | Significado |
+|---|---|
+| `LEDR[9:7]` | Avenida: rojo, amarillo, verde |
+| `LEDR[6:4]` | Calle: rojo, amarillo, verde |
+| `LEDR[3:2]` | Peatones: rojo, verde |
+| `LEDR[1]` | Solicitud peatonal pendiente |
+| `LEDR[0]` | Latido de 1 s |
+| `HEX1 HEX0` | Segundos restantes |
+| `HEX3` | Fase (1 a 5, `E` en emergencia) |
+
+---
+
+## Arquitectura del procesador
+
+- ISA: subconjunto de **RV32I + `mul`** (25 instrucciones de los formatos R, I, S, B, U y J).
+- Microarquitectura **multiciclo**, controlada por una máquina de estados basada en `uc_simple`.
+- 32 registros de 32 bits, ROM de 128 instrucciones y RAM de 32 palabras.
+- Reloj del procesador: 12.5 MHz (50 MHz / 4).
+
+| Formato | Instrucciones |
+|---|---|
+| R | `add sub and or xor slt sll srl sra mul` |
+| I | `addi andi ori xori slti slli srli srai lw jalr` |
+| S | `sw` |
+| B | `beq bne blt` |
+| U | `lui` |
+| J | `jal` |
+
+![Ruta de datos](Reporte/figuras/diagrama_ruta_datos.png)
+
+| Instrucción | Estados de la unidad de control | Ciclos |
+|---|---|:-:|
+| R, I, `lui` | FETCH → DECODE → EXEC_R → WRITEBACK | 4 |
+| `lw` | FETCH → DECODE → MEM_ADDR → MEM_READ → WRITEBACK | 5 |
+| `sw` | FETCH → DECODE → MEM_ADDR → MEM_WRITE | 4 |
+| `beq bne blt` | FETCH → DECODE → EXEC_B | 3 |
+| `jal jalr` | FETCH → DECODE → EXEC_J | 3 |
+
+![Máquina de estados](Reporte/figuras/diagrama_fsm_control.png)
+
+### Módulos
+
+| Módulo | Origen | Descripción |
+|---|---|---|
+| `alu_riscv` | clase | ALU de 32 bits (se usa sin cambios) |
+| `adder_nbits` | clase | Sumadores PC+4 y PC+inmediato |
+| `mux_4a1` | clase | Elige el dato que se escribe en el registro destino |
+| `pipo_register` | clase | Contador de programa (PC) |
+| `rom_file` | adaptado | Memoria de instrucciones (`$readmemh`) |
+| `ram` | adaptado | Memoria de datos (se corrigió la polaridad de `we`) |
+| `unidad_control` | adaptado | FSM de `uc_simple` con estados para saltos y decodificador de la ALU |
+| `banco_registros` | nuevo | 32 × 32 bits, `x0` = 0 |
+| `generador_inmediatos` | nuevo | Inmediatos de los formatos I, S, B, U y J |
+| `procesador_riscv` | nuevo | Ruta de datos |
+| `perifericos_io` | nuevo | Registros de E/S mapeados en memoria |
+| `divisor_tick`, `divisor_reloj` | nuevo | Tick de 1 s y reloj del procesador |
+| `bin_a_bcd`, `decodificador_7seg` | nuevo | Conversión para los displays |
+| `semaforo_soc` | nuevo | Procesador + RAM + periféricos |
+| `semaforo_de10lite` | nuevo | Top-level con los pines de la tarjeta |
+
+---
+
+## Mapa de memoria
+
+| Dirección | Registro | Acceso | Uso |
+|---|---|:-:|---|
+| `0x000`–`0x07F` | RAM | L/E | Datos y estadísticas |
+| `0x400` | LEDS | E | Luces (`LEDR[9:2]`) |
+| `0x404` | CUENTA | E | Segundos para `HEX1 HEX0` |
+| `0x408` | FASE | E | Fase para `HEX3` |
+| `0x40C` | SWITCHES | L | `SW[9:0]` sincronizados |
+| `0x410` | PEATON | L/E | Solicitud peatonal (escribir la borra) |
+| `0x414` | TICK | L/E | Pasó 1 segundo (escribir lo borra) |
+
+---
+
+## Estructura del repositorio
+
+```
+├── Arquis_ProyectoFinal.aws              Workspace de Active-HDL
+├── Arquis_ProyectoFinal/Arquis_ProyectoFinal/
+│   ├── Arquis_ProyectoFinal.adf          Diseño de Active-HDL
+│   ├── resultados_tb_*.txt               Salida de cada testbench
+│   └── src/
+│       ├── *.v                           Módulos del procesador y del sistema
+│       ├── tb_*.v                        Testbenches
+│       ├── programa_semaforo.asm/.hex/.lst      Programa del semáforo
+│       └── prueba_instrucciones.asm/.hex/.lst   Programa de prueba del procesador
+├── quartus/
+│   ├── semaforo_de10lite.qpf / .qsf      Proyecto y asignación de pines
+│   ├── semaforo_de10lite.sdc             Restricciones de tiempo
+│   ├── pines_de10lite.csv / .tcl         Pines para importar en el Pin Planner
+│   └── programa_semaforo.hex             Programa que carga la ROM al sintetizar
+└── Reporte/                              Reporte en LaTeX (main.tex, figuras/, codigo/)
+```
+
+- `.asm`: el programa en ensamblador RISC-V.
+- `.hex`: el código máquina que carga la ROM.
+- `.lst`: la dirección y el código de cada instrucción.
+
+---
+
+## Simulación en Active-HDL
+
+1. Abrir `Arquis_ProyectoFinal.aws` en Active-HDL.
+2. **Design → Compile All**.
+3. Seleccionar el testbench como *top-level* y elegir **Simulation → Initialize Simulation**.
+4. Agregar las señales al *Waveform* y correr la simulación.
+
+| Testbench | Qué prueba |
+|---|---|
+| `tb_banco_registros` | Escritura/lectura, `x0` = 0, reset |
+| `tb_perifericos_io` | Registros de E/S, sincronizadores, botón y tick |
+| `tb_procesador_riscv` | Ejecuta `prueba_instrucciones.hex` y revisa 25 registros y la RAM |
+| `tb_semaforo_de10lite` | Sistema completo: arranque, autos, peatón, emergencia y displays |
+
+En la simulación del sistema, `TICK_DIV = 200`, así que un "segundo" dura 16 µs para que la
+prueba sea corta. En la tarjeta, `TICK_DIV = 12 500 000`.
+
+---
+
+## Implementación en Quartus
+
+1. Abrir `quartus/semaforo_de10lite.qpf` en Quartus Prime Lite (dispositivo `10M50DAF484C7G`).
+2. **Processing → Start Compilation**.
+3. **Tools → Programmer**, seleccionar `output_files/semaforo_de10lite.sof` y presionar **Start**.
+
+Los pines ya están en el `.qsf`. En otro proyecto se pueden importar con
+**Assignments → Import Assignments** usando `quartus/pines_de10lite.csv`.
+El archivo `programa_semaforo.hex` debe estar en la carpeta del proyecto de Quartus.
+
+---
+
+## Resultados
+
+Los cuatro testbenches terminan con **"TODAS LAS PRUEBAS PASARON"**:
+
+| Testbench | Verificaciones |
+|---|:-:|
+| Banco de registros | 9 / 9 |
+| Periféricos | 8 / 8 |
+| Procesador | 27 / 27 (184 ciclos, CPI ≈ 3.76) |
+| Semáforo | 6 / 6 escenarios |
+
+Simulación completa del semáforo:
+
+![Waveform del semáforo](Reporte/figuras/wave_semaforo_completo.png)
+
+Botón peatonal (la cuenta se recorta a 3 s y luego viene la fase 5):
+
+![Waveform peatón](Reporte/figuras/wave_semaforo_peaton.png)
+
+Emergencia (todos los semáforos en rojo):
+
+![Waveform emergencia](Reporte/figuras/wave_semaforo_emergencia.png)
+
+Procesador ejecutando instrucciones tipo R (estados 0 → 1 → 2 → 6):
+
+![Waveform procesador](Reporte/figuras/wave_procesador_fsm.png)
+
+El análisis completo está en el reporte (`Reporte/main.tex`).
+
+---
+
+## Autores
+
+| Nombre | Matrícula |
+|---|---|
+| Juan Diego Acosta Ojeda | 185015 |
+| Mario Cardeña García | 180220 |
+
+**Profesor:** Omar Guillén Fernández. Diciembre de 2026.

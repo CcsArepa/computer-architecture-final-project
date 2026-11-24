@@ -1,0 +1,39 @@
+# --- Active-HDL: archivos generados al compilar/simular ---
+Arquis_ProyectoFinal/Arquis_ProyectoFinal/Arquis_ProyectoFinal/
+Arquis_ProyectoFinal/Arquis_ProyectoFinal/compile/
+Arquis_ProyectoFinal/Arquis_ProyectoFinal/log/
+*.asdb
+*.asdbw/
+*.awc
+*.wsp
+*.mgf
+synthesis.order
+Edfmap.ini
+
+# --- Quartus: archivos generados ---
+quartus/db/
+quartus/incremental_db/
+quartus/output_files/
+quartus/simulation/
+*.qws
+*.rpt
+*.summary
+*.smsg
+
+# --- LaTeX ---
+*.aux
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.synctex.gz
+*.fdb_latexmk
+*.fls
+
+# --- Entregables generados ---
+*.zip
+
+# --- Sistema ---
+desktop.ini
+Thumbs.db

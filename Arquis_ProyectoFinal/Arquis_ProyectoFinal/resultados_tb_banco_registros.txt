@@ -1,0 +1,12 @@
+--- INICIANDO PRUEBAS DEL BANCO DE REGISTROS ---
+OK   : x1 = 00000000
+OK   : x31 = 00000000
+OK   : x1 = 0000000f
+OK   : x2 = deadbeef
+OK   : x31 = ffffffff
+OK   : x0 = 00000000
+OK   : lectura doble rd1 = 15, rd2 = deadbeef
+OK   : x1 = 0000000f
+OK   : x2 = 00000000
+
+--- BANCO DE REGISTROS: TODAS LAS PRUEBAS PASARON ---

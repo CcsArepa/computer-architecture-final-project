@@ -1,0 +1,107 @@
+DIR   CODIGO    INSTRUCCION
+0000  40000413  addi s0, x0, 1024       # s0 = 0x400 (perifericos)
+0004  00002023  sw   x0, 0(x0)          # peatones = 0
+0008  00002223  sw   x0, 4(x0)          # emergencias = 0
+000C  00002423  sw   x0, 8(x0)          # ciclos de la calle = 0
+0010  0C800293  addi t0, x0, 200        # 0x0C8: AV verde, CALLE rojo, PEATON rojo
+0014  00542023  sw   t0, 0(s0)
+0018  00100293  addi t0, x0, 1
+001C  00542423  sw   t0, 8(s0)          # fase 1
+0020  00A00493  addi s1, x0, 10         # 10 segundos
+0024  00100913  addi s2, x0, 1          # el peaton puede acortar esta fase
+0028  0F8000EF  jal  ra, CUENTA
+002C  00C42283  lw   t0, 12(s0)         # lee switches
+0030  0022F313  andi t1, t0, 2
+0034  0A031E63  bne  t1, x0, EMERGENCIA
+0038  01042303  lw   t1, 16(s0)         # hay peaton?
+003C  00031863  bne  t1, x0, AV_AMARILLO
+0040  0012F313  andi t1, t0, 1          # hay auto en la calle?
+0044  00031463  bne  t1, x0, AV_AMARILLO
+0048  FE5FF06F  jal  x0, AV_ESPERA
+004C  14800293  addi t0, x0, 328        # 0x148: AV amarillo, CALLE rojo, PEATON rojo
+0050  00542023  sw   t0, 0(s0)
+0054  00200293  addi t0, x0, 2
+0058  00542423  sw   t0, 8(s0)          # fase 2
+005C  00300493  addi s1, x0, 3
+0060  00000913  addi s2, x0, 0
+0064  0BC000EF  jal  ra, CUENTA
+0068  01042303  lw   t1, 16(s0)         # si hay peaton, primero pasa el peaton
+006C  04031A63  bne  t1, x0, PEATONES
+0070  00802283  lw   t0, 8(x0)          # ciclos de la calle + 1 (en RAM)
+0074  00128293  addi t0, t0, 1
+0078  00502423  sw   t0, 8(x0)
+007C  21800293  addi t0, x0, 536        # 0x218: AV rojo, CALLE verde, PEATON rojo
+0080  00542023  sw   t0, 0(s0)
+0084  00300293  addi t0, x0, 3
+0088  00542423  sw   t0, 8(s0)          # fase 3
+008C  00800493  addi s1, x0, 8
+0090  00000913  addi s2, x0, 0
+0094  08C000EF  jal  ra, CUENTA
+0098  22800293  addi t0, x0, 552        # 0x228: AV rojo, CALLE amarillo, PEATON rojo
+009C  00542023  sw   t0, 0(s0)
+00A0  00400293  addi t0, x0, 4
+00A4  00542423  sw   t0, 8(s0)          # fase 4
+00A8  00300493  addi s1, x0, 3
+00AC  00000913  addi s2, x0, 0
+00B0  070000EF  jal  ra, CUENTA
+00B4  01042303  lw   t1, 16(s0)
+00B8  00031463  bne  t1, x0, PEATONES
+00BC  F55FF06F  jal  x0, AV_VERDE
+00C0  00042823  sw   x0, 16(s0)         # se atiende (borra) la solicitud
+00C4  00002283  lw   t0, 0(x0)          # peatones + 1 (en RAM)
+00C8  00128293  addi t0, t0, 1
+00CC  00502023  sw   t0, 0(x0)
+00D0  24400293  addi t0, x0, 580        # 0x244: AV rojo, CALLE rojo, PEATON verde
+00D4  00542023  sw   t0, 0(s0)
+00D8  00500293  addi t0, x0, 5
+00DC  00542423  sw   t0, 8(s0)          # fase 5
+00E0  00700493  addi s1, x0, 7
+00E4  00000913  addi s2, x0, 0
+00E8  038000EF  jal  ra, CUENTA
+00EC  F25FF06F  jal  x0, AV_VERDE
+00F0  00402283  lw   t0, 4(x0)          # emergencias + 1 (en RAM)
+00F4  00128293  addi t0, t0, 1
+00F8  00502223  sw   t0, 4(x0)
+00FC  24800293  addi t0, x0, 584        # 0x248: todos en rojo
+0100  00542023  sw   t0, 0(s0)
+0104  00E00293  addi t0, x0, 14
+0108  00542423  sw   t0, 8(s0)          # fase E
+010C  00042223  sw   x0, 4(s0)          # cuenta 00
+0110  00C42283  lw   t0, 12(s0)
+0114  0022F313  andi t1, t0, 2
+0118  FE031CE3  bne  t1, x0, EMERG_ESPERA
+011C  EF5FF06F  jal  x0, AV_VERDE
+0120  00042A23  sw   x0, 20(s0)         # descarta un tick viejo
+0124  00942223  sw   s1, 4(s0)          # muestra los segundos
+0128  00C42283  lw   t0, 12(s0)
+012C  0022F313  andi t1, t0, 2
+0130  FC0310E3  bne  t1, x0, EMERGENCIA
+0134  00090E63  beq  s2, x0, CUENTA_TICK
+0138  01042303  lw   t1, 16(s0)
+013C  00030A63  beq  t1, x0, CUENTA_TICK
+0140  00300393  addi t2, x0, 3
+0144  0093C463  blt  t2, s1, CUENTA_CORTA   # si 3 < s1 se recorta
+0148  0080006F  jal  x0, CUENTA_TICK
+014C  00300493  addi s1, x0, 3
+0150  01442303  lw   t1, 20(s0)         # ya paso un segundo?
+0154  FC0308E3  beq  t1, x0, CUENTA_LAZO
+0158  00042A23  sw   x0, 20(s0)         # borra el tick
+015C  FFF48493  addi s1, s1, -1
+0160  FC0492E3  bne  s1, x0, CUENTA_LAZO
+0164  00942223  sw   s1, 4(s0)          # muestra 00
+0168  00008067  jalr x0, 0(ra)          # regresa
+
+ETIQUETAS
+0000  INICIO
+0010  AV_VERDE
+002C  AV_ESPERA
+004C  AV_AMARILLO
+0070  CALLE_VERDE
+0098  CALLE_AMARILLO
+00C0  PEATONES
+00F0  EMERGENCIA
+0110  EMERG_ESPERA
+0120  CUENTA
+0124  CUENTA_LAZO
+014C  CUENTA_CORTA
+0150  CUENTA_TICK

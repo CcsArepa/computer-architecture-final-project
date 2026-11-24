@@ -1,0 +1,66 @@
+% Paquetes y estilo compartidos por main.tex y anexo_codigo.tex
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-tabla,es-noshorthands,es-nodecimaldot]{babel}
+\usepackage{lmodern}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage[table]{xcolor}
+\usepackage{listings}
+\usepackage{caption}
+\usepackage{amsmath}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage[hidelinks]{hyperref}
+
+% ---------- Datos del equipo (llenar) ----------
+\newcommand{\universidad}{Universidad de las Américas Puebla}
+\newcommand{\facultad}{Departamento de Computación, Electrónica y Mecatrónica}
+\newcommand{\materia}{Arquitecturas Computacionales}
+\newcommand{\profesor}{Omar Guillén Fernández}
+\newcommand{\fechaentrega}{1 de diciembre de 2026}
+
+% ---------- Estilo ----------
+\DeclareRobustCommand{\cod}[1]{\texttt{\detokenize{#1}}}
+\setlength{\parskip}{0.5em}
+\captionsetup{font=small,labelfont=bf}
+\renewcommand{\arraystretch}{1.2}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\small Proyecto Final -- \materia}
+\rhead{\small Semáforo inteligente RISC-V}
+\cfoot{\thepage}
+
+\definecolor{fondo}{RGB}{248,248,248}
+\definecolor{comentario}{RGB}{0,128,0}
+\definecolor{clave}{RGB}{0,0,180}
+\definecolor{cadena}{RGB}{163,21,21}
+
+\lstset{
+  basicstyle=\ttfamily\scriptsize,
+  backgroundcolor=\color{fondo},
+  keywordstyle=\color{clave}\bfseries,
+  commentstyle=\color{comentario}\itshape,
+  stringstyle=\color{cadena},
+  numbers=left, numberstyle=\tiny\color{gray}, numbersep=6pt,
+  frame=single, rulecolor=\color{gray!50},
+  breaklines=true, breakatwhitespace=false,
+  tabsize=4, showstringspaces=false,
+  columns=fullflexible, keepspaces=true,
+  captionpos=t
+}
+\lstdefinelanguage{RISCV}{
+  morekeywords={add,sub,and,or,xor,slt,sll,srl,sra,mul,addi,andi,ori,xori,slti,
+    slli,srli,srai,lw,sw,beq,bne,blt,jal,jalr,lui,nop},
+  sensitive=false,
+  morecomment=[l]{\#}
+}
+\renewcommand{\lstlistingname}{Código}
+\renewcommand{\lstlistlistingname}{Índice de códigos}
+

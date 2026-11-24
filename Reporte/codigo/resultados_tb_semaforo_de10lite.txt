@@ -1,0 +1,46 @@
+--- INICIANDO PRUEBA DEL SEMAFORO INTELIGENTE ---
+
+[1] Arranque
+t=    2.9 us: fase 1
+OK   : luces AV_VERDE  AV=001 CALLE=100 PEATON=10
+OK   : displays muestran 10
+OK   : HEX3 muestra la fase 1
+
+[2] Sin autos en la calle
+OK   : sin autos la avenida sigue en verde
+
+[3] Sensor de autos activado (SW[0]=1)
+t=  232.9 us: fase 2
+OK   : luces AV_AMARILLO  AV=010 CALLE=100 PEATON=10
+t=  279.2 us: fase 3
+OK   : luces CALLE_VERDE  AV=100 CALLE=001 PEATON=10
+t=  403.7 us: fase 4
+OK   : luces CALLE_AMARILLO  AV=100 CALLE=010 PEATON=10
+t=  453.5 us: fase 1
+OK   : luces AV_VERDE  AV=001 CALLE=100 PEATON=10
+
+[4] Boton peatonal (KEY[1])
+OK   : LEDR[1] indica solicitud peatonal
+OK   : el boton recorta el verde a 3 s
+t=  533.8 us: fase 2
+OK   : luces AV_AMARILLO  AV=010 CALLE=100 PEATON=10
+t=  582.5 us: fase 5
+OK   : luces PEATONES  AV=100 CALLE=100 PEATON=01
+OK   : la solicitud se borra al atenderla
+t=  693.5 us: fase 1
+OK   : luces AV_VERDE  AV=001 CALLE=100 PEATON=10
+
+[5] Emergencia (SW[1]=1)
+t=  745.7 us: fase e
+OK   : luces EMERGENCIA  AV=100 CALLE=100 PEATON=10
+OK   : HEX3 muestra E
+OK   : sigue en emergencia mientras SW[1]=1
+t=  812.9 us: fase 1
+OK   : luces AV_VERDE  AV=001 CALLE=100 PEATON=10
+
+[6] Estadisticas en RAM
+OK   : RAM[0]: 1 cruce peatonal
+OK   : RAM[1]: 1 emergencia
+OK   : RAM[2]: 1 ciclo de la calle
+
+--- SEMAFORO: TODAS LAS PRUEBAS PASARON ---

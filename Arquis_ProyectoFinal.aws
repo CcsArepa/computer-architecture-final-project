@@ -1,0 +1,11 @@
+[Version]
+Version=17.0
+[Designs]
+arquis_proyectofinal=.\Arquis_ProyectoFinal\Arquis_ProyectoFinal\Arquis_ProyectoFinal.adf
+[Browser]
+sort=order
+mode=none
+[Order]
+order=1
+[Expand]
+arquis_proyectofinal=1

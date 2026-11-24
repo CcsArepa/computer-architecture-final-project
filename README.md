@@ -70,6 +70,28 @@ El cruce tiene una **avenida principal**, una **calle secundaria** y un **paso p
 | `LEDR[0]` | Latido de 1 s |
 | `HEX1 HEX0` | Segundos restantes |
 | `HEX3` | Fase (1 a 5, `E` en emergencia) |
+| `GPIO[7:0]` | LEDs rojos, amarillos y verdes en protoboard (conector JP1, pines 1 a 8) |
+
+### LEDs de colores en protoboard
+
+Los LEDs de la DE10-Lite son todos rojos. Por eso las mismas luces también salen por el conector
+GPIO (JP1) hacia LEDs de colores en una protoboard. Cada LED va de su pin GPIO a una resistencia
+de **220 Ω** y luego a la pata larga (+); la pata corta (−) va a **GND (pin 12)**.
+**No usar el pin 11, que es de 5 V.**
+
+| Pin JP1 | Señal | Pin FPGA | LED |
+|:-:|---|---|---|
+| 1 | `GPIO[0]` | `PIN_V10` | 🔴 Avenida rojo |
+| 2 | `GPIO[1]` | `PIN_W10` | 🟡 Avenida amarillo |
+| 3 | `GPIO[2]` | `PIN_V9` | 🟢 Avenida verde |
+| 4 | `GPIO[3]` | `PIN_W9` | 🔴 Calle rojo |
+| 5 | `GPIO[4]` | `PIN_V8` | 🟡 Calle amarillo |
+| 6 | `GPIO[5]` | `PIN_W8` | 🟢 Calle verde |
+| 7 | `GPIO[6]` | `PIN_V7` | 🔴 Peatón rojo |
+| 8 | `GPIO[7]` | `PIN_W7` | 🟢 Peatón verde |
+| 12 | GND | — | Cátodo (−) de todos los LEDs |
+
+![Conexión de la protoboard](Reporte/figuras/diagrama_protoboard.png)
 
 ---
 
@@ -203,7 +225,7 @@ Los cuatro testbenches terminan con **"TODAS LAS PRUEBAS PASARON"**:
 | Banco de registros | 9 / 9 |
 | Periféricos | 8 / 8 |
 | Procesador | 27 / 27 (184 ciclos, CPI ≈ 3.76) |
-| Semáforo | 6 / 6 escenarios |
+| Semáforo | 7 / 7 escenarios (incluye las salidas GPIO a la protoboard) |
 
 Simulación completa del semáforo:
 

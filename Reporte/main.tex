@@ -63,9 +63,10 @@ unidad de control extendida. El semáforo es un programa en ensamblador RISC-V a
 en la ROM, que interactúa con la tarjeta Terasic DE10-Lite por medio de periféricos mapeados
 en memoria: un sensor de autos (\cod{SW[0]}), un botón peatonal (\cod{KEY[1]}), un modo de
 emergencia que pone todos los semáforos en rojo (\cod{SW[1]}) y una cuenta regresiva en los
-displays de siete segmentos. Se escribieron cuatro bancos de prueba (\emph{testbenches}) y se
-simularon en Aldec Active-HDL. El procesador ejecutó correctamente las 18 instrucciones
-soportadas (27 de 27 verificaciones) y el sistema completo pasó todos los escenarios de prueba:
+displays de siete segmentos. Las luces se muestran en los LEDs de la tarjeta y también en LEDs
+rojos, amarillos y verdes montados en una protoboard y conectados al puerto GPIO. Se
+escribieron cuatro bancos de prueba (\emph{testbenches}) y se simularon en Aldec Active-HDL. El
+procesador ejecutó correctamente las 25 instrucciones soportadas (27 de 27 verificaciones) y el sistema completo pasó todos los escenarios de prueba:
 operación normal, demanda vehicular, solicitud peatonal y emergencia.
 \end{abstract}
 
@@ -252,6 +253,9 @@ después por un decodificador que enciende los segmentos \texttt{a}--\texttt{g} 
     Intel Quartus Prime Lite & Síntesis, asignación de pines y programación de la tarjeta. \\
     Módulos de clase & \cod{alu_riscv}, \cod{adder_nbits}, \cod{mux_4a1}, \cod{pipo_register},
       \cod{rom_file}, \cod{ram}, \cod{uc_simple}. \\
+    Protoboard y cables \emph{jumper} macho-hembra & Conexión de los LEDs de colores al conector GPIO. \\
+    8 LEDs de 5~mm (3 rojos, 2 amarillos, 3 verdes) & Semáforos de la avenida, la calle y los peatones. \\
+    8 resistencias de 220~$\Omega$ & Limitan la corriente de cada LED. \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -275,6 +279,8 @@ comportamiento requerido es:
         rojo mientras el interruptor esté activo. Al desactivarlo se reinicia en la fase 1.
   \item \textbf{Cuenta regresiva}: \cod{HEX1}--\cod{HEX0} muestran los segundos restantes y
         \cod{HEX3} el número de fase (1--5, o \texttt{E} en emergencia).
+  \item \textbf{Luces de colores}: como los 10 LEDs de la tarjeta son todos rojos, las mismas
+        luces salen por el conector GPIO hacia LEDs rojos, amarillos y verdes en una protoboard.
 \end{itemize}
 
 \begin{table}[H]
@@ -297,6 +303,7 @@ comportamiento requerido es:
     \cod{LEDR[0]} & Salida & Latido de 1~s (el sistema está vivo) \\
     \cod{HEX1}, \cod{HEX0} & Salida & Segundos restantes de la fase (00--99) \\
     \cod{HEX3} & Salida & Fase actual (1--5, E) \\
+    \cod{GPIO[7:0]} & Salida & LEDs de colores en la protoboard (conector JP1, pines 1--8) \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -550,7 +557,7 @@ instrucción; por ejemplo, \cod{add x3, x1, x2} = \cod{0x002081B3} y
 Se preparó un proyecto de Quartus Prime (\cod{quartus/semaforo_de10lite.qpf}) con:
 \begin{itemize}[itemsep=0pt]
   \item el dispositivo \cod{10M50DAF484C7G} y \cod{semaforo_de10lite} como entidad superior;
-  \item la asignación de los 71 pines usados según el manual de la tarjeta, con estándar
+  \item la asignación de los 79 pines usados según el manual de la tarjeta, con estándar
         \cod{3.3-V LVTTL} (Tabla~\ref{tab:pines} y Apéndice~\ref{ap:quartus});
   \item un archivo de restricciones \cod{.sdc} que declara el reloj de 50~MHz y el reloj
         generado de 12.5~MHz, y marca como falsas las rutas de botones, interruptores, LEDs y
@@ -594,6 +601,54 @@ para que \cod{$readmemh} lo encuentre durante la síntesis.
   \item Probar: \cod{SW[0]} = autos, \cod{KEY[1]} = peatón, \cod{SW[1]} = emergencia,
         \cod{KEY[0]} = \emph{reset}.
 \end{enumerate}
+
+\subsection{Semáforo con LEDs de colores en protoboard}
+Los 10 LEDs de la DE10-Lite son rojos, así que en la tarjeta los colores solo se distinguen por
+la posición. Por sugerencia del profesor, las luces del semáforo también se sacan por el conector
+de expansión GPIO (JP1) hacia LEDs rojos, amarillos y verdes en una protoboard. En
+\cod{semaforo_de10lite.v} se agregó el puerto de salida \cod{GPIO[7:0]}, que copia los mismos
+bits que el programa escribe en el registro LEDS (\cod{0x400}):
+\begin{center}
+\cod{assign GPIO = {leds[2], leds[3], leds[4], leds[5], leds[6], leds[7], leds[8], leds[9]};}
+\end{center}
+No cambió ni el procesador ni el programa: es otra salida para el mismo registro de periférico.
+Los 8 LEDs usan los pines 1 a 8 del conector, que están juntos, y la tierra del pin 12
+(Figura~\ref{fig:protoboard} y Tabla~\ref{tab:gpio}).
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{figuras/diagrama_protoboard.png}
+  \caption{Conexión de los LEDs de colores al conector GPIO (JP1) de la DE10-Lite.}
+  \label{fig:protoboard}
+\end{figure}
+
+\begin{table}[H]
+  \centering
+  \caption{Asignación de los LEDs de la protoboard.}
+  \label{tab:gpio}
+  \small
+  \begin{tabular}{llccl}
+    \toprule
+    Señal & Pin FPGA & Pin JP1 & Bit de LEDS & LED \\
+    \midrule
+    \cod{GPIO[0]} & \cod{PIN_V10} & 1 & 9 & Avenida rojo \\
+    \cod{GPIO[1]} & \cod{PIN_W10} & 2 & 8 & Avenida amarillo \\
+    \cod{GPIO[2]} & \cod{PIN_V9}  & 3 & 7 & Avenida verde \\
+    \cod{GPIO[3]} & \cod{PIN_W9}  & 4 & 6 & Calle rojo \\
+    \cod{GPIO[4]} & \cod{PIN_V8}  & 5 & 5 & Calle amarillo \\
+    \cod{GPIO[5]} & \cod{PIN_W8}  & 6 & 4 & Calle verde \\
+    \cod{GPIO[6]} & \cod{PIN_V7}  & 7 & 3 & Peatón rojo \\
+    \cod{GPIO[7]} & \cod{PIN_W7}  & 8 & 2 & Peatón verde \\
+    GND & -- & 12 & -- & Cátodo común de los 8 LEDs \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Cada LED se conecta así: pin GPIO $\rightarrow$ resistencia de 220~$\Omega$ $\rightarrow$ ánodo
+(pata larga); cátodo (pata corta) $\rightarrow$ GND. La salida es de 3.3~V, así que con un LED
+rojo ($V_F \approx 2$~V) la corriente es $I = (3.3 - 2.0)/220 \approx 6$~mA. Es suficiente para
+que el LED se vea encendido y no excede la corriente que entrega un pin del MAX~10 con el
+estándar \cod{3.3-V LVTTL}. El pin 11 del conector (5~V) no se usa.
 
 \subsection{Estrategia de verificación}
 Cada \emph{testbench} se escribió con el mismo estilo que en clase (declaración de señales,
@@ -776,6 +831,15 @@ Tabla~\ref{tab:escenarios} resume las verificaciones.
   \label{fig:wemer}
 \end{figure}
 
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{figuras/wave_semaforo_protoboard.png}
+  \caption{Salidas hacia la protoboard: \cod{GPIO} repite las luces de \cod{avenida},
+  \cod{calle} y \cod{peaton}. \cod{pb_avenida} = \cod{GPIO[2:0]} se lee como (verde, amarillo,
+  rojo), en orden inverso a \cod{LEDR}.}
+  \label{fig:wgpio}
+\end{figure}
+
 \begin{table}[H]
   \centering
   \caption{Escenarios verificados en \cod{tb_semaforo_de10lite}.}
@@ -794,6 +858,7 @@ Tabla~\ref{tab:escenarios} resume las verificaciones.
     5. Emergencia & Fase E, todo en rojo, \cod{HEX3} = ``E''; se mantiene mientras \cod{SW[1]}=1;
       regresa a fase 1. & OK \\
     6. Estadísticas & RAM[0] = 1 peatón, RAM[1] = 1 emergencia, RAM[2] = 1 ciclo de la calle. & OK \\
+    7. Protoboard & En las 10 revisiones de luces, \cod{GPIO[7:0]} coincide con \cod{LEDR[9:2]}. & OK \\
     \bottomrule
   \end{tabular}
 \end{table}

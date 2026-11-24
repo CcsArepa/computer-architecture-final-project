@@ -37,3 +37,8 @@ quartus/simulation/
 # --- Sistema ---
 desktop.ini
 Thumbs.db
+
+# Documento de estudio (no se sube)
+Explicacion_Instrucciones_ROM.pdf
+*.wsw
+bde.set

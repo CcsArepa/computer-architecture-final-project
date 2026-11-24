@@ -10,6 +10,7 @@ module tb_semaforo_de10lite;
 	reg  [9:0] 	SW;
 	wire [9:0] 	LEDR;
 	wire [7:0] 	HEX0, HEX1, HEX2, HEX3, HEX4, HEX5;
+	wire [7:0] 	GPIO;   // LEDs de colores en la protoboard
 
 	localparam TICK  = 200;          // ciclos del procesador por segundo simulado
 	localparam T_SEG = TICK * 80;    // ns por segundo simulado (reloj CPU = 80 ns)
@@ -28,7 +29,8 @@ module tb_semaforo_de10lite;
 	// Unidad bajo prueba
 	semaforo_de10lite #(.TICK_DIV(TICK), .DIV_RELOJ(2), .ROM_FILE("src/programa_semaforo.hex")) dut (
 		.MAX10_CLK1_50(clk), .KEY(KEY), .SW(SW), .LEDR(LEDR),
-		.HEX0(HEX0), .HEX1(HEX1), .HEX2(HEX2), .HEX3(HEX3), .HEX4(HEX4), .HEX5(HEX5));
+		.HEX0(HEX0), .HEX1(HEX1), .HEX2(HEX2), .HEX3(HEX3), .HEX4(HEX4), .HEX5(HEX5),
+		.GPIO(GPIO));
 
 	always #10 clk = ~clk;  // 50 MHz
 
@@ -38,6 +40,9 @@ module tb_semaforo_de10lite;
 	wire [1:0] peaton     = LEDR[3:2];   // R V
 	wire 	   solicitud  = LEDR[1];
 	wire 	   latido     = LEDR[0];
+	wire [2:0] pb_avenida = GPIO[2:0];   // protoboard: V A R (GPIO[2] verde ... GPIO[0] rojo)
+	wire [2:0] pb_calle   = GPIO[5:3];
+	wire [1:0] pb_peaton  = GPIO[7:6];
 	wire [3:0] fase       = dut.fase;
 	wire [6:0] cuenta     = dut.cuenta;
 	wire [31:0] pc        = dut.pc_actual;
@@ -69,6 +74,14 @@ module tb_semaforo_de10lite;
 				$fdisplay(log, "ERROR: luces %0s = %b, se esperaba %b", nombre, LEDR[9:2], esperado);
 			end else
 				$fdisplay(log, "OK   : luces %0s  AV=%b CALLE=%b PEATON=%b", nombre, avenida, calle, peaton);
+			// La protoboard (GPIO[0] = avenida rojo ... GPIO[7] = peaton verde)
+			// debe mostrar las mismas luces que LEDR[9:2], en orden inverso
+			if (GPIO !== {esperado[0], esperado[1], esperado[2], esperado[3],
+			              esperado[4], esperado[5], esperado[6], esperado[7]}) begin
+				errores = errores + 1;
+				$fdisplay(log, "ERROR: protoboard %0s GPIO = %b", nombre, GPIO);
+			end else
+				$fdisplay(log, "OK   : protoboard GPIO[7:0] = %b", GPIO);
 		end
 	endtask
 

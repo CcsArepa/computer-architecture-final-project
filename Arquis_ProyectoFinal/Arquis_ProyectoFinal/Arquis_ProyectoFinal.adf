@@ -57,3 +57,7 @@ REFRESH_FLOW=1
 .\src\tb_perifericos_io.v=Verilog Source Code
 .\src\tb_procesador_riscv.v=Verilog Source Code
 .\src\tb_semaforo_de10lite.v=Verilog Source Code
+[HierarchyViewer]
+HierarchyInformation=
+ShowHide=ShowTopLevel
+Selected=

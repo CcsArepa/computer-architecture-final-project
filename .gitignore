@@ -42,3 +42,6 @@ Thumbs.db
 Explicacion_Instrucciones_ROM.pdf
 *.wsw
 bde.set
+
+# El proyecto de Quartus empaquetado si se sube (para abrirlo en la universidad)
+!Quartus_Semaforo_DE10Lite.zip

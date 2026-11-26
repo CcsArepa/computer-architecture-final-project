@@ -259,6 +259,11 @@ El archivo `programa_semaforo.hex` debe estar en la carpeta del proyecto de Quar
 > Copia la carpeta **completa** del repositorio (o descarga el ZIP de GitHub), no solo `quartus/`:
 > el proyecto toma los `.v` de `Arquis_ProyectoFinal/Arquis_ProyectoFinal/src/`.
 
+**Opción rápida:** descarga [`Quartus_Semaforo_DE10Lite.zip`](Quartus_Semaforo_DE10Lite.zip)
+(botón *Download raw file*). Trae solo lo necesario para Quartus (proyecto, pines, `.sdc`, `.hex` y
+los 17 módulos `.v`) y un `LEEME.txt`. Extráelo completo en una ruta corta (por ejemplo `C:\semaforo\`)
+y abre `quartus\semaforo_de10lite.qpf`.
+
 ---
 
 ## Resultados

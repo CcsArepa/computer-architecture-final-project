@@ -93,6 +93,46 @@ de **220 Ω** y luego a la pata larga (+); la pata corta (−) va a **GND (pin 1
 
 ![Conexión de la protoboard](Reporte/figuras/diagrama_protoboard.png)
 
+#### Lista de materiales
+
+| Material | Cantidad | Detalle |
+|---|:-:|---|
+| LED rojo 5 mm | 3 | Avenida, calle y peatón |
+| LED amarillo 5 mm | 2 | Avenida y calle |
+| LED verde 5 mm | 3 | Avenida, calle y peatón |
+| Resistencia 220 Ω, ¼ W | 8 | Una por LED (colores: rojo-rojo-café) |
+| Protoboard | 1 | Media o completa |
+| Cables jumper **hembra-macho** | 9 | Del conector JP1 de la tarjeta a la protoboard (8 señales + GND) |
+| Cables jumper macho-macho | ~5 | Para el riel de GND dentro de la protoboard |
+
+Conviene comprar algunos de repuesto (por ejemplo, 2 LEDs extra de cada color y 2 resistencias),
+porque un LED conectado al revés o una pata rota es común.
+
+**Por qué 220 Ω:** los pines de la FPGA dan **3.3 V**. Con un LED rojo o amarillo (~2.0 V):
+I = (3.3 − 2.0) / 220 ≈ **6 mA**, que es suficiente para verlo encendido y seguro para el pin de la FPGA.
+Con 330 Ω también funciona, pero se ve más tenue. **No usar menos de 150 Ω.**
+Compren LEDs **verdes normales (difusos)**: los verdes "ultrabrillantes" necesitan ~3 V y con
+3.3 V casi no encienden.
+
+#### Armado paso a paso
+
+1. **Con la tarjeta desconectada del USB**, ubica el conector **JP1 (GPIO)** de 40 pines y busca
+   el **pin 1** (está marcado en la serigrafía). Los pines van en dos filas:
+   1-2 arriba, 3-4 abajo, y así sucesivamente; **11 = 5 V** y **12 = GND**.
+2. En la protoboard, conecta un cable del **pin 12 (GND)** de la tarjeta al **riel negativo (−)**.
+3. Para cada uno de los 8 LEDs (en el orden de la tabla):
+   - Cable hembra-macho del **pin JP1** a una fila de la protoboard.
+   - **Resistencia de 220 Ω** de esa fila a otra fila.
+   - **Pata larga (+, ánodo)** del LED en la fila de la resistencia.
+   - **Pata corta (−, cátodo)** del LED al **riel negativo (GND)**.
+4. Acomoda los LEDs como semáforos: rojo arriba, amarillo en medio y verde abajo, en tres grupos
+   (avenida, calle, peatón).
+5. Revisa que **nada** esté conectado al **pin 11 (5 V)** y que ningún cable toque dos pines.
+6. Conecta el USB, programa la tarjeta desde Quartus y presiona `KEY0` (reset).
+
+**Prueba rápida:** al arrancar deben encender el 🟢 verde de la avenida, el 🔴 rojo de la calle y
+el 🔴 rojo del peatón. Si un LED no enciende, gíralo: probablemente está al revés.
+
 ---
 
 ## Arquitectura del procesador
@@ -210,9 +250,14 @@ prueba sea corta. En la tarjeta, `TICK_DIV = 12 500 000`.
 2. **Processing → Start Compilation**.
 3. **Tools → Programmer**, seleccionar `output_files/semaforo_de10lite.sof` y presionar **Start**.
 
-Los pines ya están en el `.qsf`. En otro proyecto se pueden importar con
+Los pines ya están en el `.qsf`, **incluidos los 8 GPIO de la protoboard** (`GPIO[0]`–`GPIO[7]`,
+pines `PIN_V10`, `PIN_W10`, `PIN_V9`, `PIN_W9`, `PIN_V8`, `PIN_W8`, `PIN_V7`, `PIN_W7`).
+Para revisarlos: **Assignments → Pin Planner**. En otro proyecto se pueden importar con
 **Assignments → Import Assignments** usando `quartus/pines_de10lite.csv`.
 El archivo `programa_semaforo.hex` debe estar en la carpeta del proyecto de Quartus.
+
+> Copia la carpeta **completa** del repositorio (o descarga el ZIP de GitHub), no solo `quartus/`:
+> el proyecto toma los `.v` de `Arquis_ProyectoFinal/Arquis_ProyectoFinal/src/`.
 
 ---
 

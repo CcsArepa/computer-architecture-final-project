@@ -1,307 +1,243 @@
-# Semáforo inteligente con procesador RISC-V en FPGA (DE10-Lite)
+# Semáforo inteligente con un procesador RISC-V en la DE10-Lite
 
-Proyecto final de **Arquitecturas Computacionales**. Universidad de las Américas Puebla,
-Departamento de Computación, Electrónica y Mecatrónica.
+Proyecto final de Arquitecturas Computacionales (UDLAP, Departamento de Computación, Electrónica y Mecatrónica).
 
-Es un **procesador RISC-V de 32 bits multiciclo** escrito en Verilog. El procesador ejecuta, desde
-su ROM, un programa en ensamblador que controla un **semáforo inteligente** en la tarjeta
-**Terasic DE10-Lite** (Intel MAX 10). El procesador se armó con los módulos desarrollados en
-clase (ALU, sumador, multiplexor, registro, ROM, RAM y unidad de control).
+Hicimos un procesador RISC-V de 32 bits multiciclo en Verilog y le cargamos en la ROM un programa que controla un semáforo. Todo corre en la tarjeta Terasic DE10-Lite. Para armar el procesador reutilizamos los módulos que hicimos en clase (ALU, sumador, mux, registro, ROM, RAM y la unidad de control) y le agregamos lo que faltaba.
 
 ![Diagrama del sistema](Reporte/figuras/diagrama_sistema.png)
 
----
+## Qué hace el semáforo
 
-## Contenido
+Es un cruce con una avenida, una calle y un paso peatonal:
 
-- [Funciones del semáforo](#funciones-del-semáforo)
-- [Uso en la DE10-Lite](#uso-en-la-de10-lite)
-- [Arquitectura del procesador](#arquitectura-del-procesador)
-- [Mapa de memoria](#mapa-de-memoria)
-- [Estructura del repositorio](#estructura-del-repositorio)
-- [Simulación en Active-HDL](#simulación-en-active-hdl)
-- [Implementación en Quartus](#implementación-en-quartus)
-- [Resultados](#resultados)
-- [Autores](#autores)
-
----
-
-## Funciones del semáforo
-
-El cruce tiene una **avenida principal**, una **calle secundaria** y un **paso peatonal**.
-
-| Función | Comportamiento |
-|---|---|
-| Verde mínimo | La avenida está en verde al menos 10 s |
-| Sensor de autos | Si no hay autos en la calle, la avenida sigue en verde. Si hay, la calle recibe 8 s de verde |
-| Botón peatonal | Guarda la solicitud, recorta el verde de la avenida a 3 s y da 7 s a los peatones |
-| Emergencia | Desde cualquier fase pone **todos los semáforos en rojo** mientras esté activa |
-| Cuenta regresiva | Los displays muestran los segundos restantes y el número de fase |
-| Estadísticas | El programa cuenta en RAM los peatones atendidos, las emergencias y los ciclos de la calle |
+- La avenida siempre tiene al menos 10 s de verde.
+- Si no hay autos en la calle (SW0 apagado), la avenida se queda en verde. Si llega un auto, se le da 8 s de verde a la calle.
+- Si un peatón presiona el botón, se guarda la solicitud, el verde de la avenida se corta a 3 s y los peatones tienen 7 s para cruzar.
+- Con el switch de emergencia todo se pone en rojo hasta que se apague.
+- En los displays sale la cuenta regresiva y el número de fase.
+- En la RAM se van contando los peatones, las emergencias y las veces que pasó la calle.
 
 ![Fases del semáforo](Reporte/figuras/diagrama_fases_semaforo.png)
 
 | Fase | Avenida | Calle | Peatones | Duración |
 |:-:|:-:|:-:|:-:|:-:|
-| 1 | 🟢 | 🔴 | 🔴 | ≥ 10 s (espera auto o peatón) |
-| 2 | 🟡 | 🔴 | 🔴 | 3 s |
-| 3 | 🔴 | 🟢 | 🔴 | 8 s |
-| 4 | 🔴 | 🟡 | 🔴 | 3 s |
-| 5 | 🔴 | 🔴 | 🟢 | 7 s |
-| E | 🔴 | 🔴 | 🔴 | mientras `SW[1]` = 1 |
+| 1 | verde | rojo | rojo | 10 s o más (hasta que haya auto o peatón) |
+| 2 | amarillo | rojo | rojo | 3 s |
+| 3 | rojo | verde | rojo | 8 s |
+| 4 | rojo | amarillo | rojo | 3 s |
+| 5 | rojo | rojo | verde | 7 s |
+| E | rojo | rojo | rojo | mientras SW1 esté arriba |
 
----
+## Cómo se usa en la tarjeta
 
-## Uso en la DE10-Lite
+Entradas:
 
-| Control | Función |
-|---|---|
-| `KEY[0]` | Reset |
-| `KEY[1]` | Botón peatonal |
-| `SW[0]` | Sensor de autos en la calle |
-| `SW[1]` | Modo emergencia |
+- `KEY0`: reset
+- `KEY1`: botón del peatón
+- `SW0`: sensor de autos
+- `SW1`: emergencia
 
-| Salida | Significado |
-|---|---|
-| `LEDR[9:7]` | Avenida: rojo, amarillo, verde |
-| `LEDR[6:4]` | Calle: rojo, amarillo, verde |
-| `LEDR[3:2]` | Peatones: rojo, verde |
-| `LEDR[1]` | Solicitud peatonal pendiente |
-| `LEDR[0]` | Latido de 1 s |
-| `HEX1 HEX0` | Segundos restantes |
-| `HEX3` | Fase (1 a 5, `E` en emergencia) |
-| `GPIO[7:0]` | LEDs rojos, amarillos y verdes en protoboard (conector JP1, pines 1 a 8) |
+Salidas:
 
-### LEDs de colores en protoboard
+- `LEDR9-7`: avenida (rojo, amarillo, verde)
+- `LEDR6-4`: calle (rojo, amarillo, verde)
+- `LEDR3-2`: peatones (rojo, verde)
+- `LEDR1`: hay un peatón esperando
+- `LEDR0`: parpadea cada segundo
+- `HEX1 HEX0`: segundos que faltan
+- `HEX3`: fase (1 a 5, o E en emergencia)
+- `GPIO0-7`: los LEDs de colores de la protoboard
 
-Los LEDs de la DE10-Lite son todos rojos. Por eso las mismas luces también salen por el conector
-GPIO (JP1) hacia LEDs de colores en una protoboard. Cada LED va de su pin GPIO a una resistencia
-de **220 Ω** y luego a la pata larga (+); la pata corta (−) va a **GND (pin 12)**.
-**No usar el pin 11, que es de 5 V.**
+### Protoboard
+
+Como los LEDs de la tarjeta son todos rojos, el profe nos sugirió sacar las luces por el conector GPIO (JP1) a LEDs de colores en una protoboard. Cada LED va así: pin GPIO → resistencia de 220 Ω → pata larga del LED, y la pata corta a GND (pin 12). Ojo: el pin 11 es de 5 V, no hay que conectar nada ahí.
 
 | Pin JP1 | Señal | Pin FPGA | LED |
 |:-:|---|---|---|
-| 1 | `GPIO[0]` | `PIN_V10` | 🔴 Avenida rojo |
-| 2 | `GPIO[1]` | `PIN_W10` | 🟡 Avenida amarillo |
-| 3 | `GPIO[2]` | `PIN_V9` | 🟢 Avenida verde |
-| 4 | `GPIO[3]` | `PIN_W9` | 🔴 Calle rojo |
-| 5 | `GPIO[4]` | `PIN_V8` | 🟡 Calle amarillo |
-| 6 | `GPIO[5]` | `PIN_W8` | 🟢 Calle verde |
-| 7 | `GPIO[6]` | `PIN_V7` | 🔴 Peatón rojo |
-| 8 | `GPIO[7]` | `PIN_W7` | 🟢 Peatón verde |
-| 12 | GND | — | Cátodo (−) de todos los LEDs |
+| 1 | GPIO[0] | PIN_V10 | rojo avenida |
+| 2 | GPIO[1] | PIN_W10 | amarillo avenida |
+| 3 | GPIO[2] | PIN_V9 | verde avenida |
+| 4 | GPIO[3] | PIN_W9 | rojo calle |
+| 5 | GPIO[4] | PIN_V8 | amarillo calle |
+| 6 | GPIO[5] | PIN_W8 | verde calle |
+| 7 | GPIO[6] | PIN_V7 | rojo peatón |
+| 8 | GPIO[7] | PIN_W7 | verde peatón |
+| 12 | GND | - | patas cortas de todos los LEDs |
 
 ![Conexión de la protoboard](Reporte/figuras/diagrama_protoboard.png)
 
-#### Lista de materiales
+Material:
 
-| Material | Cantidad | Detalle |
-|---|:-:|---|
-| LED rojo 5 mm | 3 | Avenida, calle y peatón |
-| LED amarillo 5 mm | 2 | Avenida y calle |
-| LED verde 5 mm | 3 | Avenida, calle y peatón |
-| Resistencia 220 Ω, ¼ W | 8 | Una por LED (colores: rojo-rojo-café) |
-| Protoboard | 1 | Media o completa |
-| Cables jumper **hembra-macho** | 9 | Del conector JP1 de la tarjeta a la protoboard (8 señales + GND) |
-| Cables jumper macho-macho | ~5 | Para el riel de GND dentro de la protoboard |
+- 3 LEDs rojos, 2 amarillos y 3 verdes (5 mm)
+- 8 resistencias de 220 Ω (rojo-rojo-café)
+- 1 protoboard
+- 9 jumpers hembra-macho (8 señales + GND) y unos cuantos macho-macho para el riel de tierra
 
-Conviene comprar algunos de repuesto (por ejemplo, 2 LEDs extra de cada color y 2 resistencias),
-porque un LED conectado al revés o una pata rota es común.
+Es buena idea llevar un par de LEDs y resistencias de más por si alguno se quema o se rompe una pata.
 
-**Por qué 220 Ω:** los pines de la FPGA dan **3.3 V**. Con un LED rojo o amarillo (~2.0 V):
-I = (3.3 − 2.0) / 220 ≈ **6 mA**, que es suficiente para verlo encendido y seguro para el pin de la FPGA.
-Con 330 Ω también funciona, pero se ve más tenue. **No usar menos de 150 Ω.**
-Compren LEDs **verdes normales (difusos)**: los verdes "ultrabrillantes" necesitan ~3 V y con
-3.3 V casi no encienden.
+Usamos 220 Ω porque los pines de la FPGA sacan 3.3 V. Con un LED rojo (más o menos 2 V) quedan (3.3 - 2.0) / 220 ≈ 6 mA, que alcanza para que se vea bien sin forzar el pin. Con 330 Ω también prende pero más bajito; menos de 150 Ω ya no conviene. Los verdes tienen que ser normales, los ultrabrillantes piden casi 3 V y con 3.3 V apenas prenden.
 
-#### Armado paso a paso
+Armado:
 
-1. **Con la tarjeta desconectada del USB**, ubica el conector **JP1 (GPIO)** de 40 pines y busca
-   el **pin 1** (está marcado en la serigrafía). Los pines van en dos filas:
-   1-2 arriba, 3-4 abajo, y así sucesivamente; **11 = 5 V** y **12 = GND**.
-2. En la protoboard, conecta un cable del **pin 12 (GND)** de la tarjeta al **riel negativo (−)**.
-3. Para cada uno de los 8 LEDs (en el orden de la tabla):
-   - Cable hembra-macho del **pin JP1** a una fila de la protoboard.
-   - **Resistencia de 220 Ω** de esa fila a otra fila.
-   - **Pata larga (+, ánodo)** del LED en la fila de la resistencia.
-   - **Pata corta (−, cátodo)** del LED al **riel negativo (GND)**.
-4. Acomoda los LEDs como semáforos: rojo arriba, amarillo en medio y verde abajo, en tres grupos
-   (avenida, calle, peatón).
-5. Revisa que **nada** esté conectado al **pin 11 (5 V)** y que ningún cable toque dos pines.
-6. Conecta el USB, programa la tarjeta desde Quartus y presiona `KEY0` (reset).
+1. Con la tarjeta desconectada, ubicar el pin 1 de JP1 (viene marcado). Los pines van de dos en dos: 1-2, 3-4, etc. El 11 es 5 V y el 12 es GND.
+2. Del pin 12 sacar un cable al riel negativo de la protoboard.
+3. Para cada LED: jumper del pin de JP1 a una fila, resistencia de esa fila a otra, la pata larga del LED en la fila de la resistencia y la pata corta al riel negativo.
+4. Acomodarlos como semáforo (rojo arriba, amarillo, verde abajo) en tres grupos.
+5. Revisar que nada esté en el pin 11 y que ningún cable toque dos pines.
+6. Conectar el USB, programar desde Quartus y darle reset con KEY0.
 
-**Prueba rápida:** al arrancar deben encender el 🟢 verde de la avenida, el 🔴 rojo de la calle y
-el 🔴 rojo del peatón. Si un LED no enciende, gíralo: probablemente está al revés.
+Al arrancar deben prender el verde de la avenida, el rojo de la calle y el rojo del peatón. Si alguno no prende, lo más seguro es que esté volteado.
 
----
+## El procesador
 
-## Arquitectura del procesador
-
-- ISA: subconjunto de **RV32I + `mul`** (25 instrucciones de los formatos R, I, S, B, U y J).
-- Microarquitectura **multiciclo**, controlada por una máquina de estados basada en `uc_simple`.
+- Subconjunto de RV32I más `mul`: 25 instrucciones de los formatos R, I, S, B, U y J.
+- Multiciclo, con una máquina de estados que sale de la `uc_simple` de clase.
 - 32 registros de 32 bits, ROM de 128 instrucciones y RAM de 32 palabras.
-- Reloj del procesador: 12.5 MHz (50 MHz / 4).
+- Corre a 12.5 MHz (los 50 MHz de la tarjeta entre 4).
 
 | Formato | Instrucciones |
 |---|---|
-| R | `add sub and or xor slt sll srl sra mul` |
-| I | `addi andi ori xori slti slli srli srai lw jalr` |
-| S | `sw` |
-| B | `beq bne blt` |
-| U | `lui` |
-| J | `jal` |
+| R | add, sub, and, or, xor, slt, sll, srl, sra, mul |
+| I | addi, andi, ori, xori, slti, slli, srli, srai, lw, jalr |
+| S | sw |
+| B | beq, bne, blt |
+| U | lui |
+| J | jal |
 
 ![Ruta de datos](Reporte/figuras/diagrama_ruta_datos.png)
 
-| Instrucción | Estados de la unidad de control | Ciclos |
+Ciclos por instrucción:
+
+| Instrucción | Estados | Ciclos |
 |---|---|:-:|
-| R, I, `lui` | FETCH → DECODE → EXEC_R → WRITEBACK | 4 |
-| `lw` | FETCH → DECODE → MEM_ADDR → MEM_READ → WRITEBACK | 5 |
-| `sw` | FETCH → DECODE → MEM_ADDR → MEM_WRITE | 4 |
-| `beq bne blt` | FETCH → DECODE → EXEC_B | 3 |
-| `jal jalr` | FETCH → DECODE → EXEC_J | 3 |
+| R, I, lui | FETCH, DECODE, EXEC_R, WRITEBACK | 4 |
+| lw | FETCH, DECODE, MEM_ADDR, MEM_READ, WRITEBACK | 5 |
+| sw | FETCH, DECODE, MEM_ADDR, MEM_WRITE | 4 |
+| beq, bne, blt | FETCH, DECODE, EXEC_B | 3 |
+| jal, jalr | FETCH, DECODE, EXEC_J | 3 |
 
 ![Máquina de estados](Reporte/figuras/diagrama_fsm_control.png)
 
 ### Módulos
 
-| Módulo | Origen | Descripción |
-|---|---|---|
-| `alu_riscv` | clase | ALU de 32 bits (se usa sin cambios) |
-| `adder_nbits` | clase | Sumadores PC+4 y PC+inmediato |
-| `mux_4a1` | clase | Elige el dato que se escribe en el registro destino |
-| `pipo_register` | clase | Contador de programa (PC) |
-| `rom_file` | adaptado | Memoria de instrucciones (`$readmemh`) |
-| `ram` | adaptado | Memoria de datos (se corrigió la polaridad de `we`) |
-| `unidad_control` | adaptado | FSM de `uc_simple` con estados para saltos y decodificador de la ALU |
-| `banco_registros` | nuevo | 32 × 32 bits, `x0` = 0 |
-| `generador_inmediatos` | nuevo | Inmediatos de los formatos I, S, B, U y J |
-| `procesador_riscv` | nuevo | Ruta de datos |
-| `perifericos_io` | nuevo | Registros de E/S mapeados en memoria |
-| `divisor_tick`, `divisor_reloj` | nuevo | Tick de 1 s y reloj del procesador |
-| `bin_a_bcd`, `decodificador_7seg` | nuevo | Conversión para los displays |
-| `semaforo_soc` | nuevo | Procesador + RAM + periféricos |
-| `semaforo_de10lite` | nuevo | Top-level con los pines de la tarjeta |
+De clase, sin cambios:
 
----
+- `alu_riscv`: la ALU de 32 bits
+- `adder_nbits`: para PC+4 y PC+inmediato
+- `mux_4a1`: escoge qué se escribe en el registro destino
+- `pipo_register`: el PC
+
+De clase, con cambios:
+
+- `rom_file`: memoria de instrucciones, se carga con `$readmemh`
+- `ram`: memoria de datos (le corregimos la polaridad de `we`)
+- `unidad_control`: la FSM de `uc_simple` con los estados de saltos y el decodificador de la ALU
+
+Nuevos:
+
+- `banco_registros`: 32 registros, x0 siempre en 0
+- `generador_inmediatos`: saca el inmediato según el formato
+- `procesador_riscv`: la ruta de datos completa
+- `perifericos_io`: los registros de entrada/salida mapeados en memoria
+- `divisor_tick` y `divisor_reloj`: el tick de 1 s y el reloj del procesador
+- `bin_a_bcd` y `decodificador_7seg`: para los displays
+- `semaforo_soc`: procesador + RAM + periféricos
+- `semaforo_de10lite`: el top-level con los pines de la tarjeta
 
 ## Mapa de memoria
 
-| Dirección | Registro | Acceso | Uso |
+| Dirección | Qué es | Acceso | Para qué |
 |---|---|:-:|---|
-| `0x000`–`0x07F` | RAM | L/E | Datos y estadísticas |
-| `0x400` | LEDS | E | Luces (`LEDR[9:2]`) |
-| `0x404` | CUENTA | E | Segundos para `HEX1 HEX0` |
-| `0x408` | FASE | E | Fase para `HEX3` |
-| `0x40C` | SWITCHES | L | `SW[9:0]` sincronizados |
-| `0x410` | PEATON | L/E | Solicitud peatonal (escribir la borra) |
-| `0x414` | TICK | L/E | Pasó 1 segundo (escribir lo borra) |
+| 0x000 - 0x07F | RAM | L/E | datos y estadísticas |
+| 0x400 | LEDS | E | las luces |
+| 0x404 | CUENTA | E | los segundos de HEX1 HEX0 |
+| 0x408 | FASE | E | la fase de HEX3 |
+| 0x40C | SWITCHES | L | los switches ya sincronizados |
+| 0x410 | PEATON | L/E | solicitud del peatón (al escribir se borra) |
+| 0x414 | TICK | L/E | ya pasó un segundo (al escribir se borra) |
 
----
-
-## Estructura del repositorio
+## Carpetas
 
 ```
-├── Arquis_ProyectoFinal.aws              Workspace de Active-HDL
-├── Arquis_ProyectoFinal/Arquis_ProyectoFinal/
-│   ├── Arquis_ProyectoFinal.adf          Diseño de Active-HDL
-│   ├── resultados_tb_*.txt               Salida de cada testbench
-│   └── src/
-│       ├── *.v                           Módulos del procesador y del sistema
-│       ├── tb_*.v                        Testbenches
-│       ├── programa_semaforo.asm/.hex/.lst      Programa del semáforo
-│       └── prueba_instrucciones.asm/.hex/.lst   Programa de prueba del procesador
-├── quartus/
-│   ├── semaforo_de10lite.qpf / .qsf      Proyecto y asignación de pines
-│   ├── semaforo_de10lite.sdc             Restricciones de tiempo
-│   ├── pines_de10lite.csv / .tcl         Pines para importar en el Pin Planner
-│   └── programa_semaforo.hex             Programa que carga la ROM al sintetizar
-└── Reporte/                              Reporte en LaTeX (main.tex, figuras/, codigo/)
+Arquis_ProyectoFinal.aws                 workspace de Active-HDL
+Arquis_ProyectoFinal/Arquis_ProyectoFinal/
+    Arquis_ProyectoFinal.adf             diseño de Active-HDL
+    resultados_tb_*.txt                  lo que imprime cada testbench
+    src/
+        *.v                              módulos
+        tb_*.v                           testbenches
+        programa_semaforo.asm/.hex/.lst      programa del semáforo
+        prueba_instrucciones.asm/.hex/.lst   programa para probar el procesador
+quartus/
+    semaforo_de10lite.qpf / .qsf         proyecto y pines
+    semaforo_de10lite.sdc                relojes
+    pines_de10lite.csv / .tcl            pines para importar en otro proyecto
+    programa_semaforo.hex                el programa que se mete en la ROM
+Reporte/                                 reporte en LaTeX
 ```
 
-- `.asm`: el programa en ensamblador RISC-V.
-- `.hex`: el código máquina que carga la ROM.
-- `.lst`: la dirección y el código de cada instrucción.
+El `.asm` es el programa en ensamblador, el `.hex` es el código máquina que lee la ROM y el `.lst` tiene los dos juntos con la dirección de cada instrucción.
 
----
+## Simulación (Active-HDL)
 
-## Simulación en Active-HDL
+1. Abrir `Arquis_ProyectoFinal.aws`.
+2. Design → Compile All.
+3. Poner el testbench como top-level y Simulation → Initialize Simulation.
+4. Agregar las señales al waveform y correr.
 
-1. Abrir `Arquis_ProyectoFinal.aws` en Active-HDL.
-2. **Design → Compile All**.
-3. Seleccionar el testbench como *top-level* y elegir **Simulation → Initialize Simulation**.
-4. Agregar las señales al *Waveform* y correr la simulación.
+Testbenches:
 
-| Testbench | Qué prueba |
-|---|---|
-| `tb_banco_registros` | Escritura/lectura, `x0` = 0, reset |
-| `tb_perifericos_io` | Registros de E/S, sincronizadores, botón y tick |
-| `tb_procesador_riscv` | Ejecuta `prueba_instrucciones.hex` y revisa 25 registros y la RAM |
-| `tb_semaforo_de10lite` | Sistema completo: arranque, autos, peatón, emergencia y displays |
+- `tb_banco_registros`: escribir/leer, x0 = 0 y reset
+- `tb_perifericos_io`: registros de E/S, sincronizadores, botón y tick
+- `tb_procesador_riscv`: corre `prueba_instrucciones.hex` y revisa 25 registros y la RAM
+- `tb_semaforo_de10lite`: todo el sistema (arranque, autos, peatón, emergencia, displays y GPIO)
 
-En la simulación del sistema, `TICK_DIV = 200`, así que un "segundo" dura 16 µs para que la
-prueba sea corta. En la tarjeta, `TICK_DIV = 12 500 000`.
+En la simulación del semáforo usamos `TICK_DIV = 200` para que un "segundo" dure 16 µs y no tarde horas. En la tarjeta es `TICK_DIV = 12 500 000`.
 
----
+## Quartus
 
-## Implementación en Quartus
+1. Abrir `quartus/semaforo_de10lite.qpf` en Quartus Prime Lite (FPGA `10M50DAF484C7G`).
+2. Processing → Start Compilation.
+3. Tools → Programmer, escoger `output_files/semaforo_de10lite.sof` y darle Start.
 
-1. Abrir `quartus/semaforo_de10lite.qpf` en Quartus Prime Lite (dispositivo `10M50DAF484C7G`).
-2. **Processing → Start Compilation**.
-3. **Tools → Programmer**, seleccionar `output_files/semaforo_de10lite.sof` y presionar **Start**.
+Los pines ya vienen en el `.qsf`, incluyendo los 8 GPIO de la protoboard. Se pueden ver en Assignments → Pin Planner, y para pasarlos a otro proyecto está `quartus/pines_de10lite.csv` (Assignments → Import Assignments).
 
-Los pines ya están en el `.qsf`, **incluidos los 8 GPIO de la protoboard** (`GPIO[0]`–`GPIO[7]`,
-pines `PIN_V10`, `PIN_W10`, `PIN_V9`, `PIN_W9`, `PIN_V8`, `PIN_W8`, `PIN_V7`, `PIN_W7`).
-Para revisarlos: **Assignments → Pin Planner**. En otro proyecto se pueden importar con
-**Assignments → Import Assignments** usando `quartus/pines_de10lite.csv`.
-El archivo `programa_semaforo.hex` debe estar en la carpeta del proyecto de Quartus.
+Hay que bajar el repositorio completo y no solo la carpeta `quartus/`, porque el proyecto agarra los `.v` de `Arquis_ProyectoFinal/Arquis_ProyectoFinal/src/`.
 
-> Copia la carpeta **completa** del repositorio (o descarga el ZIP de GitHub), no solo `quartus/`:
-> el proyecto toma los `.v` de `Arquis_ProyectoFinal/Arquis_ProyectoFinal/src/`.
-
-**Opción rápida:** descarga [`Quartus_Semaforo_DE10Lite.zip`](Quartus_Semaforo_DE10Lite.zip)
-(botón *Download raw file*). Trae solo lo necesario para Quartus (proyecto, pines, `.sdc`, `.hex` y
-los 17 módulos `.v`) y un `LEEME.txt`. Extráelo completo en una ruta corta (por ejemplo `C:\semaforo\`)
-y abre `quartus\semaforo_de10lite.qpf`.
-
----
+Si es más fácil, está [`Quartus_Semaforo_DE10Lite.zip`](Quartus_Semaforo_DE10Lite.zip) con solo lo necesario para Quartus (proyecto, pines, `.sdc`, `.hex` y los 17 `.v`). Se descomprime en una ruta corta, por ejemplo `C:\semaforo\`, y se abre `quartus\semaforo_de10lite.qpf`.
 
 ## Resultados
 
-Los cuatro testbenches terminan con **"TODAS LAS PRUEBAS PASARON"**:
+Los cuatro testbenches pasaron:
 
-| Testbench | Verificaciones |
+| Testbench | Pruebas |
 |---|:-:|
 | Banco de registros | 9 / 9 |
 | Periféricos | 8 / 8 |
-| Procesador | 27 / 27 (184 ciclos, CPI ≈ 3.76) |
-| Semáforo | 7 / 7 escenarios (incluye las salidas GPIO a la protoboard) |
+| Procesador | 27 / 27 (184 ciclos, CPI de 3.76) |
+| Semáforo | 7 / 7 escenarios |
 
 Simulación completa del semáforo:
 
 ![Waveform del semáforo](Reporte/figuras/wave_semaforo_completo.png)
 
-Botón peatonal (la cuenta se recorta a 3 s y luego viene la fase 5):
+Cuando se presiona el botón del peatón la cuenta baja a 3 s y luego sigue la fase 5:
 
 ![Waveform peatón](Reporte/figuras/wave_semaforo_peaton.png)
 
-Emergencia (todos los semáforos en rojo):
+Emergencia, todo en rojo:
 
 ![Waveform emergencia](Reporte/figuras/wave_semaforo_emergencia.png)
 
-Procesador ejecutando instrucciones tipo R (estados 0 → 1 → 2 → 6):
+El procesador ejecutando instrucciones tipo R (estados 0, 1, 2, 6):
 
 ![Waveform procesador](Reporte/figuras/wave_procesador_fsm.png)
 
-El análisis completo está en el reporte (`Reporte/main.tex`).
+El análisis completo viene en el reporte (`Reporte/main.tex`).
 
----
+## Equipo
 
-## Autores
+- Juan Diego Acosta Ojeda (185015)
+- Mario Cardeña García (180220)
 
-| Nombre | Matrícula |
-|---|---|
-| Juan Diego Acosta Ojeda | 185015 |
-| Mario Cardeña García | 180220 |
-
-**Profesor:** Omar Guillén Fernández. Diciembre de 2026.
+Profesor: Omar Guillén Fernández. Diciembre 2026.
